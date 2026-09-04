@@ -4,6 +4,8 @@ import org.example.generator.MazeGenerator;
 import org.example.model.Cell;
 import org.example.model.Direction;
 import org.example.model.Maze;
+import org.example.solver.AStarMazeSolver;
+import org.example.solver.GeometricPathResult;
 import org.example.solver.MazeSolver;
 import org.example.validator.MazeValidator;
 import org.example.util.SeedUtil;
@@ -146,6 +148,33 @@ class MazeTest {
         assertFalse(bfsPath.isEmpty());
         assertFalse(dfsPath.isEmpty());
         assertTrue(bfsPath.size() <= dfsPath.size());
+    }
+
+    @Test
+    void aStarShouldFindAUnitLengthPathBetweenTwoAdjacentCells() {
+        Maze maze = new Maze(1, 2);
+        maze.removeWall(maze.getCell(0, 0), maze.getCell(0, 1));
+        maze.setEntrance(0, 0);
+        maze.setExit(0, 1);
+
+        GeometricPathResult result = new AStarMazeSolver().findShortestPath(maze);
+
+        assertTrue(result.found());
+        assertEquals(1.0, result.distance(), 0.000001);
+    }
+
+    @Test
+    void aStarShouldUse45DegreeTurnForAnLShapedRoute() {
+        Maze maze = new Maze(2, 2);
+        maze.removeWall(maze.getCell(0, 0), maze.getCell(0, 1));
+        maze.removeWall(maze.getCell(0, 1), maze.getCell(1, 1));
+        maze.setEntrance(0, 0);
+        maze.setExit(1, 1);
+
+        GeometricPathResult result = new AStarMazeSolver().findShortestPath(maze);
+
+        assertTrue(result.found());
+        assertEquals(1.707106, result.distance(), 0.000001);
     }
 
     private Maze createGeneratedMaze(int rows, int cols) {

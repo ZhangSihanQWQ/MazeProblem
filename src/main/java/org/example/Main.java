@@ -4,7 +4,10 @@ import org.example.generator.MazeGenerator;
 import org.example.model.Cell;
 import org.example.model.Maze;
 import org.example.renderer.MazeRenderer;
+import org.example.solver.AStarMazeSolver;
+import org.example.solver.GeometricPathResult;
 import org.example.solver.MazeSolver;
+import org.example.solver.SearchAlgorithm;
 import org.example.statistics.GameStatistics;
 import org.example.util.SeedUtil;
 import org.example.validator.MazeValidator;
@@ -32,50 +35,77 @@ public class Main {
         maze.setEntrance(0, 0);
         setRandomExit(maze, random);
 
-        MazeSolver bfsSolver = new MazeSolver();
-        long bfsStart = System.nanoTime();
-        List<Cell> bfsPath = bfsSolver.findPath(maze);
-        long bfsTime = System.nanoTime() - bfsStart;
-
-        MazeSolver dfsSolver = new MazeSolver();
-        long dfsStart = System.nanoTime();
-        List<Cell> dfsPath = dfsSolver.findPathByDfs(maze);
-        long dfsTime = System.nanoTime() - dfsStart;
-
-        new MazeRenderer().render(maze, bfsPath);
+        List<Cell> displayPath;
+        int visitedStates;
+        long searchTime;
+        List<Cell> cellPath;
+        double geometricDistance = Double.NaN;
+        if (options.searchAlgorithm() == SearchAlgorithm.BFS) {
+            MazeSolver solver = new MazeSolver();
+            long searchStart = System.nanoTime();
+            cellPath = solver.findPath(maze);
+            searchTime = System.nanoTime() - searchStart;
+            visitedStates = solver.getVisitedCount();
+            displayPath = cellPath;
+        } else {
+            AStarMazeSolver solver = new AStarMazeSolver();
+            long searchStart = System.nanoTime();
+            GeometricPathResult result = solver.findShortestPath(maze);
+            searchTime = System.nanoTime() - searchStart;
+            visitedStates = result.visitedStates();
+            geometricDistance = result.distance();
+            cellPath = toCellPath(maze, result);
+            displayPath = cellPath;
+        }
+        new MazeRenderer().render(maze, displayPath);
         MazeValidator validator = new MazeValidator();
         System.out.println("生成模式: " + (options.perfect() ? "完美迷宫" : "普通连通迷宫"));
         System.out.println("种子: seed-" + seedText);
+        System.out.println("最短路径算法: " + options.searchAlgorithm().getDisplayName());
         System.out.println("完美迷宫验证: " + (validator.isPerfectMaze(maze) ? "通过" : "未通过"));
         System.out.println(new GameStatistics(
                 maze,
-                bfsSolver.getVisitedCount(),
+                options.searchAlgorithm(),
+                visitedStates,
                 generationTime,
-                bfsTime,
-                bfsPath,
-                dfsSolver.getVisitedCount(),
-                dfsTime,
-                dfsPath
+                searchTime,
+                cellPath,
+                geometricDistance
         ));
     }
 
     private static RunOptions parseOptions(String[] args) {
         boolean perfect = false;
         String seedText = null;
+        SearchAlgorithm searchAlgorithm = null;
         for (int index = 2; index < args.length; index++) {
             String argument = args[index];
-            if ("--perfect".equalsIgnoreCase(argument)) {
+            if ("-perfect".equalsIgnoreCase(argument)) {
                 perfect = true;
             } else if (argument.regionMatches(true, 0, "seed-", 0, 5)
                     && argument.length() > 5) {
                 seedText = argument.substring(5);
+            } else if ("-bfs".equalsIgnoreCase(argument)) {
+                if (searchAlgorithm != null && searchAlgorithm != SearchAlgorithm.BFS) {
+                    throw new IllegalArgumentException("-bfs 和 -astar 只能选择一个");
+                }
+                searchAlgorithm = SearchAlgorithm.BFS;
+            } else if ("-astar".equalsIgnoreCase(argument)) {
+                if (searchAlgorithm != null && searchAlgorithm != SearchAlgorithm.ASTAR) {
+                    throw new IllegalArgumentException("-bfs 和 -astar 只能选择一个");
+                }
+                searchAlgorithm = SearchAlgorithm.ASTAR;
             } else {
                 throw new IllegalArgumentException(
-                        "可选参数只能是 --perfect 或 seed-<种子>: " + argument
+                        "可选参数只能是 -perfect、seed-<种子>、-bfs 或 -astar: " + argument
                 );
             }
         }
-        return new RunOptions(perfect, seedText);
+        return new RunOptions(
+                perfect,
+                seedText,
+                searchAlgorithm == null ? SearchAlgorithm.BFS : searchAlgorithm
+        );
     }
 
     private static int parsePositiveInt(String value, String name) {
@@ -106,6 +136,36 @@ public class Main {
         maze.setExit(exitRow, exitCol);
     }
 
-    private record RunOptions(boolean perfect, String seedText) {
+    private static List<Cell> toCellPath(Maze maze, GeometricPathResult result) {
+        java.util.LinkedHashSet<Cell> cells = new java.util.LinkedHashSet<>();
+        for (var node : result.path()) {
+            int column = (int) Math.floor(node.x());
+            int row = (int) Math.floor(node.y());
+            boolean verticalBoundary = Math.abs(node.x() - Math.rint(node.x())) < 0.000001;
+            boolean horizontalBoundary = Math.abs(node.y() - Math.rint(node.y())) < 0.000001;
+            if (!verticalBoundary && !horizontalBoundary) {
+                addCell(cells, maze.getCell((int) Math.floor(node.y()), (int) Math.floor(node.x())));
+            } else if (verticalBoundary && !horizontalBoundary) {
+                addCell(cells, maze.getCell(row, column - 1));
+                addCell(cells, maze.getCell(row, column));
+            } else if (!verticalBoundary) {
+                addCell(cells, maze.getCell(row - 1, column));
+                addCell(cells, maze.getCell(row, column));
+            }
+        }
+        return List.copyOf(cells);
+    }
+
+    private static void addCell(java.util.Set<Cell> cells, Cell cell) {
+        if (cell != null) {
+            cells.add(cell);
+        }
+    }
+
+    private record RunOptions(
+            boolean perfect,
+            String seedText,
+            SearchAlgorithm searchAlgorithm
+    ) {
     }
 }
