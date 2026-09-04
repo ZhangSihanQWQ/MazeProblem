@@ -15,7 +15,7 @@ public class Main {
     public static void main(String[] args) {
         int rows = args.length > 0 ? parsePositiveInt(args[0], "行数") : 5;
         int cols = args.length > 1 ? parsePositiveInt(args[1], "列数") : 5;
-        boolean perfect = args.length <= 2 || parseBoolean(args[2], "perfect");
+        boolean perfect = args.length > 2 && parsePerfectFlag(args[2]);
 
         Maze maze = new Maze(rows, cols);
         MazeGenerator generator = new MazeGenerator();
@@ -52,14 +52,11 @@ public class Main {
         }
     }
 
-    private static boolean parseBoolean(String value, String name) {
-        if ("true".equalsIgnoreCase(value)) {
+    private static boolean parsePerfectFlag(String value) {
+        if ("--perfect".equalsIgnoreCase(value)) {
             return true;
         }
-        if ("false".equalsIgnoreCase(value)) {
-            return false;
-        }
-        throw new IllegalArgumentException(name + "必须是 true 或 false: " + value);
+        throw new IllegalArgumentException("第三个参数只能是 --perfect: " + value);
     }
 
     private static void setRandomExit(Maze maze, Random random) {
