@@ -5,6 +5,7 @@ import org.example.model.Cell;
 import org.example.model.Direction;
 import org.example.model.Maze;
 import org.example.solver.MazeSolver;
+import org.example.validator.MazeValidator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -37,6 +38,27 @@ class MazeTest {
         }
 
         assertEquals(25, visited.size());
+    }
+
+    @Test
+    void perfectGenerationShouldProduceAPerfectMaze() {
+        Maze maze = new Maze(5, 5);
+        new MazeGenerator().generate(maze, true);
+        MazeValidator validator = new MazeValidator();
+
+        assertTrue(validator.isPerfectMaze(maze));
+        assertEquals(24, validator.countOpenConnections(maze));
+    }
+
+    @Test
+    void nonPerfectGenerationShouldRemainConnectedButContainAnExtraPassage() {
+        Maze maze = new Maze(5, 5);
+        new MazeGenerator().generate(maze, false);
+        MazeValidator validator = new MazeValidator();
+
+        assertTrue(validator.isConnected(maze));
+        assertFalse(validator.isPerfectMaze(maze));
+        assertTrue(validator.countOpenConnections(maze) > 24);
     }
 
     @Test
