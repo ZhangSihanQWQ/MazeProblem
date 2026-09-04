@@ -8,6 +8,7 @@ import org.example.solver.MazeSolver;
 import org.example.statistics.GameStatistics;
 
 import java.util.List;
+import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
@@ -21,7 +22,7 @@ public class Main {
         long generationTime = System.nanoTime() - generationStart;
 
         maze.setEntrance(0, 0);
-        maze.setExit(rows - 1, cols - 1);
+        setRandomExit(maze, new Random());
 
         MazeSolver solver = new MazeSolver();
         long searchStart = System.nanoTime();
@@ -44,5 +45,21 @@ public class Main {
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException(name + "必须是正整数: " + value);
         }
+    }
+
+    private static void setRandomExit(Maze maze, Random random) {
+        if (maze.getRows() * maze.getCols() == 1) {
+            maze.setExit(0, 0);
+            return;
+        }
+
+        int exitRow;
+        int exitCol;
+        do {
+            exitRow = random.nextInt(maze.getRows());
+            exitCol = random.nextInt(maze.getCols());
+        } while (exitRow == maze.getEntrance().getRow()
+                && exitCol == maze.getEntrance().getCol());
+        maze.setExit(exitRow, exitCol);
     }
 }

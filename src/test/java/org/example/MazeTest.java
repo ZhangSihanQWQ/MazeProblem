@@ -65,6 +65,19 @@ class MazeTest {
     }
 
     @Test
+    void bfsShouldSupportAnExitInTheMiddle() {
+        Maze maze = createGeneratedMaze(10, 20);
+        maze.setEntrance(0, 0);
+        maze.setExit(5, 7);
+
+        List<Cell> path = new MazeSolver().findPath(maze);
+
+        assertFalse(path.isEmpty());
+        assertEquals(maze.getEntrance(), path.get(0));
+        assertEquals(maze.getExit(), path.get(path.size() - 1));
+    }
+
+    @Test
     void removeWallShouldUpdateBothCells() {
         Maze maze = new Maze(1, 2);
         Cell left = maze.getCell(0, 0);
