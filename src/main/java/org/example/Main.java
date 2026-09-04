@@ -1,17 +1,48 @@
 package org.example;
 
-//TIP 要<b>运行</b>代码，请按 <shortcut actionId="Run"/> 或
-// 点击装订区域中的 <icon src="AllIcons.Actions.Execute"/> 图标。
+import org.example.generator.MazeGenerator;
+import org.example.model.Cell;
+import org.example.model.Maze;
+import org.example.renderer.MazeRenderer;
+import org.example.solver.MazeSolver;
+import org.example.statistics.GameStatistics;
+
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP 当文本光标位于高亮显示的文本处时按 <shortcut actionId="ShowIntentionActions"/>
-        // 查看 IntelliJ IDEA 建议如何修正。
-        System.out.printf("Hello and welcome!");
+        int rows = args.length > 0 ? parsePositiveInt(args[0], "行数") : 5;
+        int cols = args.length > 1 ? parsePositiveInt(args[1], "列数") : 5;
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP 按 <shortcut actionId="Debug"/> 开始调试代码。我们已经设置了一个 <icon src="AllIcons.Debugger.Db_set_breakpoint"/> 断点
-            // 但您始终可以通过按 <shortcut actionId="ToggleLineBreakpoint"/> 添加更多断点。
-            System.out.println("i = " + i);
+        Maze maze = new Maze(rows, cols);
+        MazeGenerator generator = new MazeGenerator();
+        long generationStart = System.nanoTime();
+        generator.generate(maze);
+        long generationTime = System.nanoTime() - generationStart;
+
+        maze.setEntrance(0, 0);
+        maze.setExit(rows - 1, cols - 1);
+
+        MazeSolver solver = new MazeSolver();
+        long searchStart = System.nanoTime();
+        List<Cell> path = solver.findPath(maze);
+        long searchTime = System.nanoTime() - searchStart;
+
+        new MazeRenderer().render(maze, path);
+        System.out.println(new GameStatistics(
+                maze, solver.getVisitedCount(), generationTime, searchTime, path
+        ));
+    }
+
+    private static int parsePositiveInt(String value, String name) {
+        try {
+            int result = Integer.parseInt(value);
+            if (result <= 0) {
+                throw new NumberFormatException();
+            }
+            return result;
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException(name + "必须是正整数: " + value);
         }
     }
 }
