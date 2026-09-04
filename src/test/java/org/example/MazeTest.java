@@ -6,6 +6,7 @@ import org.example.model.Direction;
 import org.example.model.Maze;
 import org.example.solver.MazeSolver;
 import org.example.validator.MazeValidator;
+import org.example.util.SeedUtil;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -111,9 +112,65 @@ class MazeTest {
         assertFalse(right.hasWall(Direction.LEFT));
     }
 
+    @Test
+    void sameSeedShouldGenerateTheSameMaze() {
+        Maze first = createSeededMaze("class-demo");
+        Maze second = createSeededMaze("class-demo");
+
+        assertEquals(mazeSignature(first), mazeSignature(second));
+    }
+
+    @Test
+    void dfsShouldFindAValidPath() {
+        Maze maze = createGeneratedMaze(10, 20);
+        maze.setEntrance(0, 0);
+        maze.setExit(5, 7);
+
+        MazeSolver dfsSolver = new MazeSolver();
+        List<Cell> path = dfsSolver.findPathByDfs(maze);
+
+        assertFalse(path.isEmpty());
+        assertEquals(maze.getEntrance(), path.get(0));
+        assertEquals(maze.getExit(), path.get(path.size() - 1));
+    }
+
+    @Test
+    void bfsPathShouldNotBeLongerThanDfsPath() {
+        Maze maze = createGeneratedMaze(10, 20);
+        maze.setEntrance(0, 0);
+        maze.setExit(5, 7);
+
+        List<Cell> bfsPath = new MazeSolver().findPath(maze);
+        List<Cell> dfsPath = new MazeSolver().findPathByDfs(maze);
+
+        assertFalse(bfsPath.isEmpty());
+        assertFalse(dfsPath.isEmpty());
+        assertTrue(bfsPath.size() <= dfsPath.size());
+    }
+
     private Maze createGeneratedMaze(int rows, int cols) {
         Maze maze = new Maze(rows, cols);
         new MazeGenerator().generate(maze);
         return maze;
+    }
+
+    private Maze createSeededMaze(String seedText) {
+        Maze maze = new Maze(6, 8);
+        new MazeGenerator(new java.util.Random(SeedUtil.toLong(seedText))).generate(maze, true);
+        return maze;
+    }
+
+    private String mazeSignature(Maze maze) {
+        StringBuilder signature = new StringBuilder();
+        for (int row = 0; row < maze.getRows(); row++) {
+            for (int col = 0; col < maze.getCols(); col++) {
+                Cell cell = maze.getCell(row, col);
+                signature.append(cell.getRow()).append(',').append(cell.getCol());
+                for (Direction direction : Direction.values()) {
+                    signature.append(cell.hasWall(direction) ? '1' : '0');
+                }
+            }
+        }
+        return signature.toString();
     }
 }
