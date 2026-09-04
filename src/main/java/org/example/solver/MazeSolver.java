@@ -7,6 +7,7 @@ import org.example.model.Maze;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,40 @@ public class MazeSolver {
 
     public int getVisitedCount() {
         return visitedCount;
+    }
+
+    public List<Cell> findPathByDfs(Maze maze) {
+        if (maze.getEntrance() == null || maze.getExit() == null) {
+            throw new IllegalStateException("请先设置迷宫入口和出口");
+        }
+
+        visitedCount = 0;
+        Deque<Cell> stack = new ArrayDeque<>();
+        Set<Cell> visited = new HashSet<>();
+        Map<Cell, Cell> parent = new HashMap<>();
+        Cell entrance = maze.getEntrance();
+        Cell exit = maze.getExit();
+        stack.push(entrance);
+        visited.add(entrance);
+
+        while (!stack.isEmpty()) {
+            Cell current = stack.pop();
+            visitedCount++;
+            if (current.equals(exit)) {
+                return buildPath(parent, entrance, exit);
+            }
+
+            for (Direction direction : Direction.values()) {
+                Cell neighbor = maze.getNeighbor(current, direction);
+                if (neighbor != null
+                        && !current.hasWall(direction)
+                        && visited.add(neighbor)) {
+                    parent.put(neighbor, current);
+                    stack.push(neighbor);
+                }
+            }
+        }
+        return List.of();
     }
 
     private List<Cell> buildPath(Map<Cell, Cell> parent, Cell entrance, Cell exit) {
