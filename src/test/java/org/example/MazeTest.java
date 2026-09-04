@@ -5,6 +5,7 @@ import org.example.model.Cell;
 import org.example.model.Direction;
 import org.example.model.Maze;
 import org.example.solver.MazeSolver;
+import org.example.validator.MazeValidator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -40,6 +41,27 @@ class MazeTest {
     }
 
     @Test
+    void perfectGenerationShouldProduceAPerfectMaze() {
+        Maze maze = new Maze(5, 5);
+        new MazeGenerator().generate(maze, true);
+        MazeValidator validator = new MazeValidator();
+
+        assertTrue(validator.isPerfectMaze(maze));
+        assertEquals(24, validator.countOpenConnections(maze));
+    }
+
+    @Test
+    void nonPerfectGenerationShouldRemainConnectedButContainAnExtraPassage() {
+        Maze maze = new Maze(5, 5);
+        new MazeGenerator().generate(maze, false);
+        MazeValidator validator = new MazeValidator();
+
+        assertTrue(validator.isConnected(maze));
+        assertFalse(validator.isPerfectMaze(maze));
+        assertTrue(validator.countOpenConnections(maze) > 24);
+    }
+
+    @Test
     void bfsShouldFindAValidPath() {
         Maze maze = createGeneratedMaze(10, 20);
         maze.setEntrance(0, 0);
@@ -62,6 +84,19 @@ class MazeTest {
             }
             assertTrue(adjacentWithoutWall);
         }
+    }
+
+    @Test
+    void bfsShouldSupportAnExitInTheMiddle() {
+        Maze maze = createGeneratedMaze(10, 20);
+        maze.setEntrance(0, 0);
+        maze.setExit(5, 7);
+
+        List<Cell> path = new MazeSolver().findPath(maze);
+
+        assertFalse(path.isEmpty());
+        assertEquals(maze.getEntrance(), path.get(0));
+        assertEquals(maze.getExit(), path.get(path.size() - 1));
     }
 
     @Test
