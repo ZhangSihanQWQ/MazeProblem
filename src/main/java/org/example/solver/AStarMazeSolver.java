@@ -14,8 +14,6 @@ import java.util.PriorityQueue;
 
 public class AStarMazeSolver {
     private static final int NO_HEADING = -1;
-    private static final double SPEED_UNITS_PER_SECOND = 1.0;
-    private static final double TURN_LOSS_COEFFICIENT_SECONDS = 0.25;
 
     public GeometricPathResult findShortestPath(Maze maze) {
         if (maze.getEntrance() == null || maze.getExit() == null) {
@@ -48,14 +46,14 @@ public class AStarMazeSolver {
             for (GeometryEdge edge : graph.getEdges(current.node())) {
                 int turnSteps = current.heading() == NO_HEADING
                         ? 0
-                        : turnDistance(current.heading(), edge.heading());
+                        : TurnPenaltyModel.turnDistance(current.heading(), edge.heading());
                 if (turnSteps > 2) {
                     continue;
                 }
                 SearchState next = new SearchState(edge.target(), edge.heading());
-                double turnPenalty = calculateTurnPenalty(turnSteps);
+                double turnPenalty = TurnPenaltyModel.calculateTurnPenalty(turnSteps);
                 double nextTime = currentDistance
-                        + edge.distance() / SPEED_UNITS_PER_SECOND
+                        + edge.distance() / TurnPenaltyModel.SPEED_UNITS_PER_SECOND
                         + turnPenalty;
                 if (nextTime < distances.getOrDefault(next, Double.POSITIVE_INFINITY)) {
                     distances.put(next, nextTime);
@@ -63,7 +61,7 @@ public class AStarMazeSolver {
                     queue.offer(new QueueEntry(
                             next,
                             nextTime + heuristic(edge.target(), goal)
-                                    / SPEED_UNITS_PER_SECOND,
+                                    / TurnPenaltyModel.SPEED_UNITS_PER_SECOND,
                             nextTime
                     ));
                 }
@@ -101,8 +99,8 @@ public class AStarMazeSolver {
             if (index >= 2) {
                 int previousHeading = calculateHeading(path.get(index - 2), previous);
                 int currentHeading = calculateHeading(previous, current);
-                turnPenalty += calculateTurnPenalty(
-                        turnDistance(previousHeading, currentHeading)
+                turnPenalty += TurnPenaltyModel.calculateTurnPenalty(
+                        TurnPenaltyModel.turnDistance(previousHeading, currentHeading)
                 );
             }
         }
@@ -117,17 +115,6 @@ public class AStarMazeSolver {
 
     private double heuristic(GeometryNode current, GeometryNode goal) {
         return Math.hypot(goal.x() - current.x(), goal.y() - current.y());
-    }
-
-    private int turnDistance(int firstHeading, int secondHeading) {
-        int difference = Math.abs(firstHeading - secondHeading);
-        return Math.min(difference, 8 - difference);
-    }
-
-    private double calculateTurnPenalty(int turnSteps) {
-        double angle = turnSteps * Math.PI / 4.0;
-        double velocityChangeRatio = 2.0 * Math.sin(angle / 2.0);
-        return TURN_LOSS_COEFFICIENT_SECONDS * velocityChangeRatio;
     }
 
     private int calculateHeading(GeometryNode from, GeometryNode to) {

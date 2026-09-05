@@ -9,6 +9,8 @@ import org.example.solver.GeometricPathResult;
 import org.example.solver.MazeSolver;
 import org.example.validator.MazeValidator;
 import org.example.util.SeedUtil;
+import org.example.solver.PathMetrics;
+import org.example.solver.TurnPenaltyModel;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -179,6 +181,22 @@ class MazeTest {
         assertEquals(1.707106, result.distance(), 0.000001);
         assertEquals(0.382683, result.turnPenalty(), 0.000001);
         assertEquals(2.089790, result.travelTime(), 0.000001);
+    }
+
+    @Test
+    void bfsPathMetricsShouldIncludeDistanceAndTurnPenalty() {
+        Maze maze = new Maze(2, 2);
+        List<Cell> path = List.of(
+                maze.getCell(0, 0),
+                maze.getCell(0, 1),
+                maze.getCell(1, 1)
+        );
+
+        PathMetrics metrics = TurnPenaltyModel.calculateCellPathMetrics(path);
+
+        assertEquals(2.0, metrics.distance(), 0.000001);
+        assertEquals(0.353553, metrics.turnPenalty(), 0.000001);
+        assertEquals(2.353553, metrics.travelTime(), 0.000001);
     }
 
     private Maze createGeneratedMaze(int rows, int cols) {

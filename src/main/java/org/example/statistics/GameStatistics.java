@@ -13,7 +13,7 @@ public class GameStatistics {
     private final long generationTimeNanos;
     private final long searchTimeNanos;
     private final int cellPathLength;
-    private final double geometricDistance;
+    private final double totalDistance;
     private final double turnPenalty;
     private final double travelTime;
 
@@ -24,7 +24,7 @@ public class GameStatistics {
             long generationTimeNanos,
             long searchTimeNanos,
             List<Cell> cellPath,
-            double geometricDistance,
+            double totalDistance,
             double turnPenalty,
             double travelTime
     ) {
@@ -34,7 +34,7 @@ public class GameStatistics {
         this.generationTimeNanos = generationTimeNanos;
         this.searchTimeNanos = searchTimeNanos;
         this.cellPathLength = cellPath.size();
-        this.geometricDistance = geometricDistance;
+        this.totalDistance = totalDistance;
         this.turnPenalty = turnPenalty;
         this.travelTime = travelTime;
     }
@@ -42,12 +42,17 @@ public class GameStatistics {
     @Override
     public String toString() {
         String pathDescription = algorithm == SearchAlgorithm.BFS
-                ? "路径长度: %d 个格子".formatted(cellPathLength)
-                : """
-                几何路径长度: %.3f units
+                ? """
+                路径长度: %d 个格子
+                总路程: %.3f units
                 转弯时间损耗: %.3f s
                 预计移动时间: %.3f s
-                """.formatted(geometricDistance, turnPenalty, travelTime);
+                """.formatted(cellPathLength, totalDistance, turnPenalty, travelTime)
+                : """
+                总路程: %.3f units
+                转弯时间损耗: %.3f s
+                预计移动时间: %.3f s
+                """.formatted(totalDistance, turnPenalty, travelTime);
         return """
                  --- 迷宫统计 ---
                 尺寸: %d x %d

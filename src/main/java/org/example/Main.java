@@ -7,7 +7,9 @@ import org.example.renderer.MazeRenderer;
 import org.example.solver.AStarMazeSolver;
 import org.example.solver.GeometricPathResult;
 import org.example.solver.MazeSolver;
+import org.example.solver.PathMetrics;
 import org.example.solver.SearchAlgorithm;
+import org.example.solver.TurnPenaltyModel;
 import org.example.statistics.GameStatistics;
 import org.example.util.SeedUtil;
 import org.example.validator.MazeValidator;
@@ -39,7 +41,7 @@ public class Main {
         int visitedStates;
         long searchTime;
         List<Cell> cellPath;
-        double geometricDistance = Double.NaN;
+        double totalDistance = Double.NaN;
         double turnPenalty = Double.NaN;
         double travelTime = Double.NaN;
         if (options.searchAlgorithm() == SearchAlgorithm.BFS) {
@@ -49,13 +51,17 @@ public class Main {
             searchTime = System.nanoTime() - searchStart;
             visitedStates = solver.getVisitedCount();
             displayPath = cellPath;
+            PathMetrics metrics = TurnPenaltyModel.calculateCellPathMetrics(cellPath);
+            totalDistance = metrics.distance();
+            turnPenalty = metrics.turnPenalty();
+            travelTime = metrics.travelTime();
         } else {
             AStarMazeSolver solver = new AStarMazeSolver();
             long searchStart = System.nanoTime();
             GeometricPathResult result = solver.findShortestPath(maze);
             searchTime = System.nanoTime() - searchStart;
             visitedStates = result.visitedStates();
-            geometricDistance = result.distance();
+            totalDistance = result.distance();
             turnPenalty = result.turnPenalty();
             travelTime = result.travelTime();
             cellPath = toCellPath(maze, result);
@@ -74,7 +80,7 @@ public class Main {
                 generationTime,
                 searchTime,
                 cellPath,
-                geometricDistance,
+                totalDistance,
                 turnPenalty,
                 travelTime
         ));
