@@ -44,30 +44,42 @@ public class AStarMazeSolver {
             }
 
             for (GeometryEdge edge : graph.getEdges(current.node())) {
-                if (current.heading() != NO_HEADING
-                        && turnDistance(current.heading(), edge.heading()) > 2) {
+                int turnSteps = current.heading() == NO_HEADING
+                        ? 0
+                        : TurnPenaltyModel.turnDistance(current.heading(), edge.heading());
+                if (turnSteps > 2) {
                     continue;
                 }
                 SearchState next = new SearchState(edge.target(), edge.heading());
-                double nextDistance = currentDistance + edge.distance();
-                if (nextDistance < distances.getOrDefault(next, Double.POSITIVE_INFINITY)) {
-                    distances.put(next, nextDistance);
+                double turnPenalty = TurnPenaltyModel.calculateTurnPenalty(turnSteps);
+                double nextTime = currentDistance
+                        + edge.distance() / TurnPenaltyModel.SPEED_UNITS_PER_SECOND
+                        + turnPenalty;
+                if (nextTime < distances.getOrDefault(next, Double.POSITIVE_INFINITY)) {
+                    distances.put(next, nextTime);
                     parents.put(next, current);
                     queue.offer(new QueueEntry(
                             next,
-                            nextDistance + heuristic(edge.target(), goal),
-                            nextDistance
+                            nextTime + heuristic(edge.target(), goal)
+                                    / TurnPenaltyModel.SPEED_UNITS_PER_SECOND,
+                            nextTime
                     ));
                 }
             }
         }
-        return new GeometricPathResult(List.of(), Double.POSITIVE_INFINITY, visitedStates);
+        return new GeometricPathResult(
+                List.of(),
+                Double.POSITIVE_INFINITY,
+                Double.POSITIVE_INFINITY,
+                Double.POSITIVE_INFINITY,
+                visitedStates
+        );
     }
 
     private GeometricPathResult buildResult(
             Map<SearchState, SearchState> parents,
             SearchState goal,
-            double distance,
+            double travelTime,
             int visitedStates
     ) {
         List<GeometryNode> path = new ArrayList<>();
@@ -75,16 +87,39 @@ public class AStarMazeSolver {
             path.add(current.node());
         }
         Collections.reverse(path);
-        return new GeometricPathResult(path, distance, visitedStates);
+        double geometricDistance = 0.0;
+        double turnPenalty = 0.0;
+        for (int index = 1; index < path.size(); index++) {
+            GeometryNode previous = path.get(index - 1);
+            GeometryNode current = path.get(index);
+            geometricDistance += Math.hypot(
+                    current.x() - previous.x(),
+                    current.y() - previous.y()
+            );
+            if (index >= 2) {
+                int previousHeading = calculateHeading(path.get(index - 2), previous);
+                int currentHeading = calculateHeading(previous, current);
+                turnPenalty += TurnPenaltyModel.calculateTurnPenalty(
+                        TurnPenaltyModel.turnDistance(previousHeading, currentHeading)
+                );
+            }
+        }
+        return new GeometricPathResult(
+                path,
+                geometricDistance,
+                turnPenalty,
+                travelTime,
+                visitedStates
+        );
     }
 
     private double heuristic(GeometryNode current, GeometryNode goal) {
         return Math.hypot(goal.x() - current.x(), goal.y() - current.y());
     }
 
-    private int turnDistance(int firstHeading, int secondHeading) {
-        int difference = Math.abs(firstHeading - secondHeading);
-        return Math.min(difference, 8 - difference);
+    private int calculateHeading(GeometryNode from, GeometryNode to) {
+        double angle = Math.atan2(to.y() - from.y(), to.x() - from.x());
+        return ((int) Math.round(angle / (Math.PI / 4)) + 8) % 8;
     }
 
     private record SearchState(GeometryNode node, int heading) {
