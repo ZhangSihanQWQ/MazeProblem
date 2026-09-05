@@ -40,6 +40,8 @@ public class Main {
         long searchTime;
         List<Cell> cellPath;
         double geometricDistance = Double.NaN;
+        double turnPenalty = Double.NaN;
+        double travelTime = Double.NaN;
         if (options.searchAlgorithm() == SearchAlgorithm.BFS) {
             MazeSolver solver = new MazeSolver();
             long searchStart = System.nanoTime();
@@ -54,6 +56,8 @@ public class Main {
             searchTime = System.nanoTime() - searchStart;
             visitedStates = result.visitedStates();
             geometricDistance = result.distance();
+            turnPenalty = result.turnPenalty();
+            travelTime = result.travelTime();
             cellPath = toCellPath(maze, result);
             displayPath = cellPath;
         }
@@ -70,7 +74,9 @@ public class Main {
                 generationTime,
                 searchTime,
                 cellPath,
-                geometricDistance
+                geometricDistance,
+                turnPenalty,
+                travelTime
         ));
     }
 

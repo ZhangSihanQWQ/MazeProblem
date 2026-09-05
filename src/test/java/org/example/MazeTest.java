@@ -161,6 +161,8 @@ class MazeTest {
 
         assertTrue(result.found());
         assertEquals(1.0, result.distance(), 0.000001);
+        assertEquals(0.0, result.turnPenalty(), 0.000001);
+        assertEquals(1.0, result.travelTime(), 0.000001);
     }
 
     @Test
@@ -175,6 +177,8 @@ class MazeTest {
 
         assertTrue(result.found());
         assertEquals(1.707106, result.distance(), 0.000001);
+        assertEquals(0.382683, result.turnPenalty(), 0.000001);
+        assertEquals(2.089790, result.travelTime(), 0.000001);
     }
 
     private Maze createGeneratedMaze(int rows, int cols) {

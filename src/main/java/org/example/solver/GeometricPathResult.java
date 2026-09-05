@@ -7,6 +7,8 @@ import java.util.List;
 public record GeometricPathResult(
         List<GeometryNode> path,
         double distance,
+        double turnPenalty,
+        double travelTime,
         int visitedStates
 ) {
     public boolean found() {
