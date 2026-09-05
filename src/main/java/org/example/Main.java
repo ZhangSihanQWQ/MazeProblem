@@ -23,6 +23,7 @@ public class Main {
         int rows = args.length > 0 ? parsePositiveInt(args[0], "行数") : 5;
         int cols = args.length > 1 ? parsePositiveInt(args[1], "列数") : 5;
         RunOptions options = parseOptions(args);
+        // 没有显式传入 seed 时生成一个 UUID，并打印出来，方便下次复现同一个迷宫。
         String seedText = options.seedText() == null
                 ? UUID.randomUUID().toString()
                 : options.seedText();
@@ -35,6 +36,7 @@ public class Main {
         long generationTime = System.nanoTime() - generationStart;
 
         maze.setEntrance(0, 0);
+        // 出口保持随机，但不能和入口重合；1x1 迷宫在方法内部单独处理。
         setRandomExit(maze, random);
 
         List<Cell> displayPath;
@@ -45,6 +47,7 @@ public class Main {
         double turnPenalty = Double.NaN;
         double travelTime = Double.NaN;
         if (options.searchAlgorithm() == SearchAlgorithm.BFS) {
+            // BFS 先找经过格子数最少的路径，再单独计算这条路径的路程和转弯损耗。
             MazeSolver solver = new MazeSolver();
             long searchStart = System.nanoTime();
             cellPath = solver.findPath(maze);
@@ -56,6 +59,7 @@ public class Main {
             turnPenalty = metrics.turnPenalty();
             travelTime = metrics.travelTime();
         } else {
+            // A* 在搜索过程中直接把路程时间和转弯损耗放进代价函数。
             AStarMazeSolver solver = new AStarMazeSolver();
             long searchStart = System.nanoTime();
             GeometricPathResult result = solver.findShortestPath(maze);
@@ -149,6 +153,7 @@ public class Main {
     }
 
     private static List<Cell> toCellPath(Maze maze, GeometricPathResult result) {
+        // A* 返回的是几何节点路径；渲染时需要转换成经过的格子，用 * 标记。
         java.util.LinkedHashSet<Cell> cells = new java.util.LinkedHashSet<>();
         for (var node : result.path()) {
             int column = (int) Math.floor(node.x());

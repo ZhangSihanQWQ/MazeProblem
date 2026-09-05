@@ -23,6 +23,7 @@ public class AStarMazeSolver {
         MazeGeometryGraph graph = MazeGeometryGraph.from(maze);
         GeometryNode start = graph.getEntranceNode(maze);
         GeometryNode goal = graph.getExitNode(maze);
+        // 状态包含“几何位置 + 进入方向”，这样同一点不同方向到达会有不同转弯代价。
         SearchState startState = new SearchState(start, NO_HEADING);
         Map<SearchState, Double> distances = new HashMap<>();
         Map<SearchState, SearchState> parents = new HashMap<>();
@@ -44,6 +45,7 @@ public class AStarMazeSolver {
             }
 
             for (GeometryEdge edge : graph.getEdges(current.node())) {
+                // heading 每 45 度为一档；超过 90 度的急转弯不作为可行动作。
                 int turnSteps = current.heading() == NO_HEADING
                         ? 0
                         : TurnPenaltyModel.turnDistance(current.heading(), edge.heading());
@@ -52,6 +54,7 @@ public class AStarMazeSolver {
                 }
                 SearchState next = new SearchState(edge.target(), edge.heading());
                 double turnPenalty = TurnPenaltyModel.calculateTurnPenalty(turnSteps);
+                // A* 的 g(n)：已用时间 + 本段路程时间 + 本次转弯损耗。
                 double nextTime = currentDistance
                         + edge.distance() / TurnPenaltyModel.SPEED_UNITS_PER_SECOND
                         + turnPenalty;
@@ -60,6 +63,7 @@ public class AStarMazeSolver {
                     parents.put(next, current);
                     queue.offer(new QueueEntry(
                             next,
+                            // h(n) 使用到终点的欧氏距离作为乐观估计，保证搜索有方向性。
                             nextTime + heuristic(edge.target(), goal)
                                     / TurnPenaltyModel.SPEED_UNITS_PER_SECOND,
                             nextTime
@@ -87,6 +91,7 @@ public class AStarMazeSolver {
             path.add(current.node());
         }
         Collections.reverse(path);
+        // 搜索时使用总时间作为代价；这里重新拆分出路程和转弯损耗，便于展示统计。
         double geometricDistance = 0.0;
         double turnPenalty = 0.0;
         for (int index = 1; index < path.size(); index++) {

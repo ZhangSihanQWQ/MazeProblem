@@ -11,6 +11,7 @@ public final class SeedUtil {
 
     public static long toLong(String seedText) {
         try {
+            // SHA-256 是确定性哈希；同一字符串总会得到同一组字节，从而复现随机序列。
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(seedText.getBytes(StandardCharsets.UTF_8));
             return ByteBuffer.wrap(digest).getLong();

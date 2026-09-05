@@ -13,6 +13,7 @@ public final class TurnPenaltyModel {
     }
 
     public static double calculateTurnPenalty(int headingSteps) {
+        // 速度向量夹角为 theta 时，|Δv| / v = 2sin(theta/2)，据此估计时间损耗。
         double angle = headingSteps * Math.PI / 4.0;
         double velocityChangeRatio = 2.0 * Math.sin(angle / 2.0);
         return TURN_LOSS_COEFFICIENT_SECONDS * velocityChangeRatio;
@@ -29,6 +30,7 @@ public final class TurnPenaltyModel {
 
         double distance = Math.max(0, path.size() - 1);
         double turnPenalty = 0.0;
+        // BFS 的路径按格子中心一步步走，所以每两个连续方向形成一次转弯。
         for (int index = 2; index < path.size(); index++) {
             int previousHeading = headingBetween(path.get(index - 2), path.get(index - 1));
             int currentHeading = headingBetween(path.get(index - 1), path.get(index));

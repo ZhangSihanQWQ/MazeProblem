@@ -20,6 +20,7 @@ public class MazeGeometryGraph {
 
     public static MazeGeometryGraph from(Maze maze) {
         MazeGeometryGraph graph = new MazeGeometryGraph();
+        // A* 不直接在格子图上走，而是在“格子中心 + 通道中点”的几何图上走。
         graph.createCenterNodes(maze);
         graph.createPassageNodes(maze);
         graph.connectCenterAndPassageNodes(maze);
@@ -80,6 +81,7 @@ public class MazeGeometryGraph {
     }
 
     private void connectPassagesInsideCells(Maze maze) {
+        // 同一格子内的多个通道中点互连，使小鼠可以在格子内部斜向切过弯角。
         for (int row = 0; row < maze.getRows(); row++) {
             for (int col = 0; col < maze.getCols(); col++) {
                 Cell cell = maze.getCell(row, col);

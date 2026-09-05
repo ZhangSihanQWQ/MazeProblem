@@ -11,6 +11,7 @@ import java.util.Set;
 
 public class MazeValidator {
     public boolean isPerfectMaze(Maze maze) {
+        // 完美迷宫在图论上是一棵树：连通，并且边数等于顶点数减一。
         return isConnected(maze) && countOpenConnections(maze) == totalCells(maze) - 1;
     }
 

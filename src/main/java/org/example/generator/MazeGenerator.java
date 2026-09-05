@@ -29,6 +29,7 @@ public class MazeGenerator {
         maze.resetVisited();
         Deque<Cell> stack = new LinkedList<>();
         int totalCells = maze.getRows() * maze.getCols();
+        // 用访问计数代替反复扫描整个迷宫，生成过程保持接近 O(V)。
         int visitedCount = 1;
         Cell current = maze.getCell(random.nextInt(maze.getRows()), random.nextInt(maze.getCols()));
         current.setVisited(true);
@@ -36,6 +37,7 @@ public class MazeGenerator {
         while (visitedCount < totalCells) {
             List<Cell> unvisitedNeighbors = getUnvisitedNeighbors(maze, current);
             if (!unvisitedNeighbors.isEmpty()) {
+                // 随机选择一个未访问邻居并拆墙，等价于小鼠向该方向“咬开”墙前进。
                 Cell next = unvisitedNeighbors.get(random.nextInt(unvisitedNeighbors.size()));
                 stack.push(current);
                 maze.removeWall(current, next);
@@ -43,6 +45,7 @@ public class MazeGenerator {
                 current.setVisited(true);
                 visitedCount++;
             } else {
+                // 当前格子走不通时回溯到上一个分叉点。
                 current = stack.pop();
             }
         }
@@ -65,6 +68,7 @@ public class MazeGenerator {
     }
 
     private void addRandomPassages(Maze maze) {
+        // 普通连通迷宫先保证连通，再额外拆墙形成环和多条可选路径。
         List<WallCandidate> candidates = new ArrayList<>();
         for (int row = 0; row < maze.getRows(); row++) {
             for (int col = 0; col < maze.getCols(); col++) {

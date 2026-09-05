@@ -33,6 +33,7 @@ public class MazeSolver {
         visited.add(entrance);
 
         while (!queue.isEmpty()) {
+            // BFS 按层扩展；边权相同，因此第一次到达出口就是最少格子数路径。
             Cell current = queue.poll();
             visitedCount++;
             if (current.equals(exit)) {
@@ -44,6 +45,7 @@ public class MazeSolver {
                 if (neighbor != null
                         && !current.hasWall(direction)
                         && visited.add(neighbor)) {
+                    // parent 记录从哪个格子来到当前邻居，用于最后反向还原路径。
                     parent.put(neighbor, current);
                     queue.offer(neighbor);
                 }
@@ -71,6 +73,7 @@ public class MazeSolver {
         visited.add(entrance);
 
         while (!stack.isEmpty()) {
+            // DFS 用栈向深处搜索，主要用于和 BFS 的访问量、路径结果做对比。
             Cell current = stack.pop();
             visitedCount++;
             if (current.equals(exit)) {
